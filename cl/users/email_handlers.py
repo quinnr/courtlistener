@@ -16,9 +16,9 @@ from django.db import transaction
 from django.utils.timezone import now
 
 from cl.users.models import (
+    EMAIL_NOTIFICATIONS,
     OBJECT_TYPES,
     STATUS_TYPES,
-    SUB_TYPES,
     BackoffEvent,
     EmailFlag,
     EmailSent,
@@ -28,11 +28,11 @@ from cl.users.models import (
 
 def get_bounce_subtype(event_sub_type: str) -> int:
     """Returns a bounce subtype integer from a bounce subtype string"""
-    sub_types_dict = dict(SUB_TYPES.TYPES)
+    sub_types_dict = dict(EMAIL_NOTIFICATIONS.TYPES)
     for key, value in sub_types_dict.items():
         if value == event_sub_type:
             return key
-    return SUB_TYPES.OTHER
+    return EMAIL_NOTIFICATIONS.OTHER
 
 
 def handle_hard_bounce(
@@ -130,6 +130,7 @@ def handle_soft_bounce(
                 defaults={
                     "retry_counter": 0,
                     "next_retry_date": next_retry_date,
+                    "notification_subtype": get_bounce_subtype(event_sub_type),
                 },
             )
 
@@ -207,7 +208,7 @@ def handle_complaint(recipient_emails: list[str]) -> None:
         EmailFlag.objects.get_or_create(
             email_address=email,
             object_type=OBJECT_TYPES.BAN,
-            defaults={"event_sub_type": SUB_TYPES.COMPLAINT},
+            defaults={"event_sub_type": EMAIL_NOTIFICATIONS.COMPLAINT},
         )
 
 
